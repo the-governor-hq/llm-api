@@ -15,7 +15,8 @@ COPY package.json .
 ENV PORT=3700 \
     LLM_API_URL=https://api.openai.com/v1 \
     LLM_MODEL=gpt-4o-mini \
-    REQUEST_TIMEOUT_MS=120000
+    REQUEST_TIMEOUT_MS=120000 \
+    GATEWAY_API_KEY=
 
 EXPOSE 3700
 

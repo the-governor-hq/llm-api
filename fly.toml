@@ -2,7 +2,8 @@
 # https://fly.io/docs/reference/configuration/
 #
 # Before deploying:
-#   fly secrets set LLM_API_KEY=sk-...
+#   fly secrets set LLM_API_KEY=sk-...                      # upstream provider key
+#   fly secrets set GATEWAY_API_KEY=your-secret-here        # key clients must send
 #   fly secrets set LLM_API_URL=https://api.openai.com/v1   # or any other provider
 #   fly secrets set LLM_MODEL=gpt-4o-mini
 

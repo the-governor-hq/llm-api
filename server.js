@@ -32,6 +32,9 @@
  *                   (default: gpt-4o-mini)
  *   LLM_API_KEY   — API key for the upstream provider
  *                   (required for hosted providers)
+ *   GATEWAY_API_KEY — secret key that callers must send to this gateway
+ *                   via  Authorization: Bearer <key>  or  x-api-key: <key>
+ *                   If unset the gateway is open (handy for local dev)
  *   PORT          — server port (default: 3700)
  *   REQUEST_TIMEOUT_MS — upstream request timeout in ms (default: 120000)
  * ============================================================================
@@ -49,6 +52,7 @@ const PORT            = parseInt(process.env.PORT || '3700', 10);
 const LLM_API_URL     = (process.env.LLM_API_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
 const LLM_MODEL       = process.env.LLM_MODEL || 'gpt-4o-mini';
 const LLM_API_KEY     = process.env.LLM_API_KEY || '';
+const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || '';
 const REQUEST_TIMEOUT = parseInt(process.env.REQUEST_TIMEOUT_MS || '120000', 10);
 
 const START_TIME = Date.now();
@@ -315,12 +319,37 @@ function formatUptime(ms) {
   return `${s}s`;
 }
 
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns true when the request carries the correct gateway key.
+ * Accepts the key via:
+ *   - Authorization: Bearer <key>
+ *   - x-api-key: <key>
+ *
+ * If GATEWAY_API_KEY is not configured the gateway is open.
+ */
+function isAuthorized(req) {
+  if (!GATEWAY_API_KEY) return true; // open mode
+
+  const authHeader = req.headers['authorization'] || '';
+  if (authHeader.toLowerCase().startsWith('bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token === GATEWAY_API_KEY) return true;
+  }
+
+  const xApiKey = (req.headers['x-api-key'] || '').trim();
+  if (xApiKey === GATEWAY_API_KEY) return true;
+
+  return false;
+}
+
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 async function router(req, res) {
   corsHeaders(res);
 
-  // Preflight
+  // Preflight — always allowed so browsers can discover the endpoint
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     return res.end();
@@ -329,12 +358,20 @@ async function router(req, res) {
   const { pathname } = url.parse(req.url);
   const method = req.method.toUpperCase();
 
+  // Health & info are always public
+  if (method === 'GET' && pathname === '/health') return handleHealth(req, res);
+  if (method === 'GET' && pathname === '/info')   return handleInfo(req, res);
+
+  // All other routes require auth when GATEWAY_API_KEY is set
+  if (!isAuthorized(req)) {
+    log('warn', 'unauthorized request', { method, pathname, ip: req.socket?.remoteAddress });
+    return sendError(res, 401, 'Unauthorized — provide a valid key via Authorization: Bearer <key> or x-api-key header', 'authentication_error');
+  }
+
   try {
     if (method === 'POST' && pathname === '/v1/chat/completions') return await handleChatCompletions(req, res);
     if (method === 'POST' && pathname === '/v1/completions')      return await handleCompletions(req, res);
     if (method === 'GET'  && pathname === '/v1/models')           return handleModels(req, res);
-    if (method === 'GET'  && pathname === '/health')              return handleHealth(req, res);
-    if (method === 'GET'  && pathname === '/info')                return handleInfo(req, res);
 
     sendError(res, 404, `Route not found: ${method} ${pathname}`, 'not_found');
   } catch (err) {
@@ -352,12 +389,13 @@ server.listen(PORT, () => {
     port: PORT,
     model: LLM_MODEL,
     provider: LLM_API_URL,
-    key_set: !!LLM_API_KEY,
+    upstream_key_set: !!LLM_API_KEY,
+    gateway_auth: GATEWAY_API_KEY ? 'enabled' : 'OPEN',
   });
   console.log(`\n  LLM API Gateway running on http://localhost:${PORT}`);
   console.log(`  Model   : ${LLM_MODEL}`);
   console.log(`  Provider: ${LLM_API_URL}`);
-  console.log(`  Key set : ${LLM_API_KEY ? 'yes' : 'NO — set LLM_API_KEY'}\n`);
+  console.log(`  Auth    : ${GATEWAY_API_KEY ? 'enabled (GATEWAY_API_KEY set)' : 'OPEN — set GATEWAY_API_KEY to protect'}\n`);
 });
 
 server.on('error', err => {

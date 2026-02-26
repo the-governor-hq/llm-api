@@ -12,13 +12,14 @@ Your app  →  POST /v1/chat/completions  →  llm-api  →  Any LLM provider
                                                           Gemini, Ollama, …)
 ```
 
-Three env vars configure the upstream entirely server-side:
+Four env vars are all that's needed — three for the upstream provider, one to protect the gateway itself:
 
 | Variable | Description | Default |
 |---|---|---|
 | `LLM_API_URL` | Base URL of the upstream LLM provider | `https://api.openai.com/v1` |
 | `LLM_MODEL` | Model identifier | `gpt-4o-mini` |
 | `LLM_API_KEY` | API key for the upstream provider | *(empty)* |
+| `GATEWAY_API_KEY` | Secret key that callers must send to use the gateway | *(empty = open)* |
 
 ## Endpoints
 
@@ -30,14 +31,33 @@ Three env vars configure the upstream entirely server-side:
 | `GET` | `/health` | Health check + uptime |
 | `GET` | `/info` | Public server info (no secrets exposed) |
 
+## Security
+
+Set `GATEWAY_API_KEY` to protect the gateway from unauthorized use. When set, all requests to `/v1/*` must include the key via:
+
+```
+Authorization: Bearer <your-gateway-key>
+```
+or
+```
+x-api-key: <your-gateway-key>
+```
+
+`/health` and `/info` are always public (no key needed).
+
+If `GATEWAY_API_KEY` is not set the gateway is fully open — fine for local dev, not recommended in production.
+
 ## Quick start
 
 ```bash
 # Clone / enter the directory
 cd llm-api
 
-# Run with OpenAI
+# Run with OpenAI (open, no gateway auth)
 LLM_API_KEY=sk-... node server.js
+
+# Run with gateway auth enabled
+GATEWAY_API_KEY=my-secret LLM_API_KEY=sk-... node server.js
 
 # Run with Ollama (no key needed)
 LLM_API_URL=http://localhost:11434/v1 LLM_MODEL=llama3 node server.js
@@ -53,6 +73,7 @@ LLM_API_URL=https://api.anthropic.com/v1 LLM_MODEL=claude-3-5-sonnet-20241022 LL
 ```bash
 curl http://localhost:3700/v1/chat/completions \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer my-secret" \
   -d '{
     "messages": [
       { "role": "user", "content": "Hello! What model are you?" }
@@ -78,7 +99,7 @@ import OpenAI from 'openai';
 
 const client = new OpenAI({
   baseURL: 'http://localhost:3700/v1',
-  apiKey: 'not-needed',   // key lives on the gateway
+  apiKey: 'my-secret',   // this is your GATEWAY_API_KEY, not the upstream key
 });
 
 const response = await client.chat.completions.create({
@@ -106,6 +127,7 @@ docker run -p 3700:3700 \
   -e LLM_API_URL=https://api.openai.com/v1 \
   -e LLM_MODEL=gpt-4o-mini \
   -e LLM_API_KEY=sk-... \
+  -e GATEWAY_API_KEY=my-secret \
   llm-api
 ```
 
@@ -114,6 +136,7 @@ docker run -p 3700:3700 \
 ```bash
 fly launch --no-deploy
 fly secrets set LLM_API_KEY=sk-...
+fly secrets set GATEWAY_API_KEY=my-secret
 fly secrets set LLM_API_URL=https://api.openai.com/v1
 fly secrets set LLM_MODEL=gpt-4o-mini
 fly deploy
@@ -126,5 +149,6 @@ fly deploy
 | `PORT` | `3700` | Server port |
 | `LLM_API_URL` | `https://api.openai.com/v1` | Upstream provider base URL |
 | `LLM_MODEL` | `gpt-4o-mini` | Model to use |
-| `LLM_API_KEY` | *(empty)* | API key |
+| `LLM_API_KEY` | *(empty)* | Upstream provider API key |
+| `GATEWAY_API_KEY` | *(empty)* | Gateway auth key — leave empty for open access |
 | `REQUEST_TIMEOUT_MS` | `120000` | Upstream timeout in milliseconds |
