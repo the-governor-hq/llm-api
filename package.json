@@ -1,0 +1,26 @@
+{
+  "name": "@the-governor-hq/llm-api",
+  "version": "1.0.0",
+  "description": "Universal LLM proxy gateway — route any app through any LLM provider",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "llm",
+    "proxy",
+    "openai",
+    "anthropic",
+    "gemini",
+    "ollama",
+    "gateway",
+    "zero-dependency"
+  ],
+  "author": "The Governor HQ",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {}
+}
