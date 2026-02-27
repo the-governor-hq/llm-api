@@ -1,0 +1,316 @@
+{
+  "info": {
+    "name": "LLM API Gateway",
+    "description": "Universal LLM proxy gateway — route any app through any LLM provider.\n\nBefore using:\n1. Set the `baseUrl` variable to your server URL (e.g., http://localhost:3700 or your deployed URL)\n2. Set the `gatewayApiKey` variable if your gateway requires authentication\n3. Optionally set `llmModel` variable to override the default model",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "llm-api-v1"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3700",
+      "type": "string"
+    },
+    {
+      "key": "gatewayApiKey",
+      "value": "your-gateway-api-key",
+      "type": "string"
+    },
+    {
+      "key": "llmModel",
+      "value": "gpt-4o-mini",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Info",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Returns the health status and uptime of the gateway server."
+          },
+          "response": []
+        },
+        {
+          "name": "Server Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["info"]
+            },
+            "description": "Returns public server information including name, version, and uptime."
+          },
+          "response": []
+        }
+      ],
+      "description": "Basic endpoints for health checks and server information."
+    },
+    {
+      "name": "Models",
+      "item": [
+        {
+          "name": "List Models",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gatewayApiKey}}",
+                "type": "text",
+                "description": "Gateway API key (if required)"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/models",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "models"]
+            },
+            "description": "Returns a list of available models configured on the gateway."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for listing available models."
+    },
+    {
+      "name": "Chat Completions",
+      "item": [
+        {
+          "name": "Chat Completion (Non-streaming)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gatewayApiKey}}",
+                "type": "text",
+                "description": "Gateway API key (if required)"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{llmModel}}\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a helpful assistant.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"What is the capital of France?\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat/completions",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "chat", "completions"]
+            },
+            "description": "Send a chat completion request without streaming. Returns the complete response at once."
+          },
+          "response": []
+        },
+        {
+          "name": "Chat Completion (Streaming)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gatewayApiKey}}",
+                "type": "text",
+                "description": "Gateway API key (if required)"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{llmModel}}\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a helpful assistant.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Write a short poem about coding.\"\n    }\n  ],\n  \"temperature\": 0.8,\n  \"max_tokens\": 200,\n  \"stream\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat/completions",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "chat", "completions"]
+            },
+            "description": "Send a chat completion request with streaming enabled. Response will be sent as Server-Sent Events (SSE)."
+          },
+          "response": []
+        },
+        {
+          "name": "Chat Completion (Multi-turn)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gatewayApiKey}}",
+                "type": "text",
+                "description": "Gateway API key (if required)"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{llmModel}}\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a helpful math tutor.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"What is 15 + 27?\"\n    },\n    {\n      \"role\": \"assistant\",\n      \"content\": \"15 + 27 = 42\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"What is that number multiplied by 2?\"\n    }\n  ],\n  \"temperature\": 0.3,\n  \"max_tokens\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat/completions",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "chat", "completions"]
+            },
+            "description": "Example of a multi-turn conversation with context."
+          },
+          "response": []
+        }
+      ],
+      "description": "OpenAI-compatible chat completion endpoints with support for streaming and multi-turn conversations."
+    },
+    {
+      "name": "Text Completions",
+      "item": [
+        {
+          "name": "Text Completion (Non-streaming)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gatewayApiKey}}",
+                "type": "text",
+                "description": "Gateway API key (if required)"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{llmModel}}\",\n  \"prompt\": \"Once upon a time in a land far away,\",\n  \"temperature\": 0.7,\n  \"max_tokens\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/completions",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "completions"]
+            },
+            "description": "Send a text completion request without streaming."
+          },
+          "response": []
+        },
+        {
+          "name": "Text Completion (Streaming)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gatewayApiKey}}",
+                "type": "text",
+                "description": "Gateway API key (if required)"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{llmModel}}\",\n  \"prompt\": \"Write a haiku about artificial intelligence:\",\n  \"temperature\": 0.8,\n  \"max_tokens\": 50,\n  \"stream\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/completions",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "completions"]
+            },
+            "description": "Send a text completion request with streaming enabled."
+          },
+          "response": []
+        }
+      ],
+      "description": "OpenAI-compatible text completion endpoints (legacy format)."
+    },
+    {
+      "name": "Alternative Auth - x-api-key Header",
+      "item": [
+        {
+          "name": "Chat Completion (x-api-key)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{gatewayApiKey}}",
+                "type": "text",
+                "description": "Alternative authentication method"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{llmModel}}\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Hello, world!\"\n    }\n  ],\n  \"max_tokens\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat/completions",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "chat", "completions"]
+            },
+            "description": "Example using x-api-key header instead of Authorization Bearer token."
+          },
+          "response": []
+        }
+      ],
+      "description": "Examples using alternative authentication method (x-api-key header)."
+    }
+  ]
+}
