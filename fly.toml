@@ -1,21 +1,17 @@
-# fly.toml — llm-api
-# https://fly.io/docs/reference/configuration/
+# fly.toml app configuration file generated for llm-api-aged-tree-181 on 2026-02-27T09:13:29-05:00
 #
-# Before deploying:
-#   fly secrets set LLM_API_KEY=sk-...                      # upstream provider key
-#   fly secrets set GATEWAY_API_KEY=your-secret-here        # key clients must send
-#   fly secrets set LLM_API_URL=https://api.openai.com/v1   # or any other provider
-#   fly secrets set LLM_MODEL=gpt-4o-mini
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = 'llm-api'
+app = 'llm-api-aged-tree-181'
 primary_region = 'fra'
 
 [build]
 
 [env]
-  PORT = '3700'
   LLM_API_URL = 'https://api.openai.com/v1'
   LLM_MODEL = 'gpt-4o-mini'
+  PORT = '3700'
   REQUEST_TIMEOUT_MS = '120000'
 
 [http_service]
