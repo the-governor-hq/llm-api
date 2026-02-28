@@ -225,14 +225,6 @@ Each layer is independent — assumes the preceding layer may fail.
 | `warn` | Violations logged, metadata attached to response via `_constitution` field, content passes through |
 | `log` | Violations logged silently, content passes through unchanged |
 
-### Crisis Detection
-
-When crisis language is detected (self-harm, suicide), the system **never blocks** — instead it appends crisis resources to the response:
-
-- **988 Suicide & Crisis Lifeline** — Call or text 988
-- **Crisis Text Line** — Text HOME to 741741
-- **International** — findahelpline.com
-
 ### Introspection
 
 ```bash
